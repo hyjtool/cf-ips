@@ -216,7 +216,7 @@ def get_input_with_esc(prompt):
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 
-# ================= 内置高性能原生进度条 =================
+# ================= 内置原生进度条 =================
 class SimpleProgressBar:
     def __init__(self, total, desc="处理中"):
         self.total = total
@@ -373,55 +373,65 @@ def upload_to_github(cfg, top_ip):
     if cfg["USE_GH"] != "true":
         return "🚫 已禁用"
     print("🐙 正在通过 API 同步 best_ips.txt 至 GitHub 仓库...")
-    try:
-        token = cfg["GH_TOKEN"]
-        owner = cfg["GH_OWNER"]
-        repo = cfg["GH_REPO_NAME"]
-        file = "best_ips.txt"
+    
+    token = cfg["GH_TOKEN"]
+    owner = cfg["GH_OWNER"]
+    repo = cfg["GH_REPO_NAME"]
+    file = "best_ips.txt"
+    
+    if not BEST_OUTPUT.exists():
+        return "❌ 失败 (本地文件不存在)"
         
-        if not BEST_OUTPUT.exists():
-            return "❌ 失败"
-            
-        api_base = f"https://api.github.com/repos/{owner}/{repo}/contents/{file}"
-        
-        req = urllib.request.Request(api_base, headers={
-            "Authorization": f"token {token}",
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "Mozilla/5.0"
-        })
-        sha = ""
+    api_base = f"https://api.github.com/repos/{owner}/{repo}/contents/{file}"
+    
+    # 构建高度兼容的 SSL 上下文，防止代理或握手中断
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    # 最多重试 3 次，防止网络波动导致偶尔 EOF 报错
+    for attempt in range(1, 4):
         try:
-            with urllib.request.urlopen(req) as resp:
-                data = json.loads(resp.read().decode())
-                sha = data.get("sha", "")
-        except Exception:
-            pass
+            req = urllib.request.Request(api_base, headers={
+                "Authorization": f"token {token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "Mozilla/5.0"
+            })
+            sha = ""
+            try:
+                with urllib.request.urlopen(req, context=ssl_context, timeout=15) as resp:
+                    data = json.loads(resp.read().decode())
+                    sha = data.get("sha", "")
+            except Exception:
+                pass
 
-        content_b64 = base64.b64encode(BEST_OUTPUT.read_bytes()).decode()
-        payload = {
-            "message": f"Update best_ips.txt: {top_ip}",
-            "content": content_b64
-        }
-        if sha:
-            payload["sha"] = sha
+            content_b64 = base64.b64encode(BEST_OUTPUT.read_bytes()).decode()
+            payload = {
+                "message": f"Update best_ips.txt: {top_ip}",
+                "content": content_b64
+            }
+            if sha:
+                payload["sha"] = sha
 
-        put_req = urllib.request.Request(api_base, data=json.dumps(payload).encode(), headers={
-            "Authorization": f"token {token}",
-            "Content-Type": "application/json",
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "Mozilla/5.0"
-        }, method="PUT")
-        
-        with urllib.request.urlopen(put_req) as resp:
-            if resp.status in (200, 201):
-                print("    └─ ✅ GitHub 同步成功")
-                return "✅ 成功 (API)"
+            put_req = urllib.request.Request(api_base, data=json.dumps(payload).encode(), headers={
+                "Authorization": f"token {token}",
+                "Content-Type": "application/json",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "Mozilla/5.0"
+            }, method="PUT")
+            
+            with urllib.request.urlopen(put_req, context=ssl_context, timeout=15) as resp:
+                if resp.status in (200, 201):
+                    print("    └─ ✅ GitHub 同步成功")
+                    return "✅ 成功 (API)"
+        except Exception as e:
+            if attempt < 3:
+                print(f"    └─ ⚠️ GitHub 同步第 {attempt} 次尝试遇到网络波动，正在重试... ({e})")
+                time.sleep(2)
             else:
-                print("    └─ ❌ GitHub 同步失败")
+                print(f"    └─ ❌ GitHub 同步最终失败: {e}")
                 return "❌ 失败"
-    except Exception as e:
-        print(f"    └─ ❌ GitHub 同步异常: {e}")
-        return "❌ 失败"
+    return "❌ 失败"
 
 
 def send_telegram(cfg, fast_count, top_ip, r2_msg, gh_msg):
