@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cloudflare 优选 IP 自动化工具 (内置原生进度条·纯净单文件版)
+Cloudflare 优选 IP 自动化工具 
 """
 
 import sys
