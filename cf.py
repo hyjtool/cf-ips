@@ -834,7 +834,7 @@ def main():
     while True:
         cfg = load_config()
         print("\n" + "=" * 45)
-        print(" 🚀 Cloudflare智能优选IP")
+        print(" 🚀 智能优选Cloudflare IP")
         print("=" * 45)
         print(" 1. 立即运行测速")
         print(" 2. 参数与云端服务设置 ")
