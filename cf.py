@@ -720,7 +720,7 @@ def config_email_menu(cfg):
         print("\n📧  [ Email 邮件通知配置与详情 ]")
         print("=" * 45)
         print(f" 1. 启停开关 (USE_MAIL) --> [{cfg['USE_MAIL']}]")
-        print(f" 2. SMTP 服务器         --> [{cfg['MAIL_HOST']}]")
+        print(f" 2. SMTP 服务器         --> [{cfg['MAIL_HOST']  or '[未设置]'}]")
         print(f" 3. 发件人邮箱          --> [{cfg['MAIL_USER'] or '[未设置]'}]")
         print(f" 4. 邮箱授权码/密码     --> [{mask_str(cfg['MAIL_PASS'])}]")
         print(f" 5. 收件人邮箱          --> [{cfg['MAIL_TO'] or '[未设置]'}]")
