@@ -58,7 +58,7 @@ DEFAULT_CONFIG = {
     "GH_TOKEN": "",
     "TG_BOT_TOKEN": "",
     "TG_CHAT_ID": "",
-    "MAIL_HOST": "smtp.qq.com",
+    "MAIL_HOST": "",
     "MAIL_USER": "",
     "MAIL_PASS": "",
     "MAIL_TO": "",
