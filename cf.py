@@ -43,7 +43,7 @@ DEFAULT_CONFIG = {
     "DOWNLOAD_TIMEOUT": "60.0",
     "MAX_NODES": "1000000",
     "TCP_WORKERS": "400",
-    "TCP_TIMEOUT": "1.5",
+    "TCP_TIMEOUT": "0.2",
     "SPEED_WORKERS": "12",
     "SPEED_TIMEOUT": "6.0",
     "SPEED_MIN": "5.0",
